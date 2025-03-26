@@ -3,6 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:tesst1/Controllers/AuthProvider.dart';
 import 'package:tesst1/Controllers/ProfileController.dart';
+import 'package:tesst1/Controllers/avatarProvider.dart';
 import 'package:tesst1/Views/Auth/SplashScreen.dart';
 import 'routes/routes.dart';
 
@@ -19,6 +20,9 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+                ChangeNotifierProvider(create: (_) => AvatarProvider()),
+
+
       ],
       child: const MyApp(),
     ),

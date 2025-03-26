@@ -32,7 +32,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     final response = await http.post(
-      Uri.parse('http://172.20.10.6:3000/user/login'),
+      Uri.parse('http://10.0.2.2:3000/user/login'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': email, 'password': password}),
     );

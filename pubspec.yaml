@@ -46,8 +46,8 @@ dependencies:
   speech_to_text: ^7.0.0
   socket_io_client: ^2.0.3+1
   shared_preferences: ^2.2.0
-
-
+  web_socket_channel: ^2.4.0  # 🔁 ou la dernière version disponible
+  record: ^5.0.5
 
 dev_dependencies:
   flutter_test:

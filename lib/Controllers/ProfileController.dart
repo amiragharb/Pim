@@ -32,7 +32,7 @@ class ProfileProvider extends ChangeNotifier {
 
       print("🔄 Fetching user profile for ID: $userId");
       final response = await http.get(
-        Uri.parse('http://172.20.10.6:3000/user/$userId'),
+        Uri.parse('http://10.0.2.2:3000/user/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -283,7 +283,7 @@ Future<bool> resendOtp(String email) async {
   Future<bool> _loginUser(BuildContext context, String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('http://172.20.10.6:3000/user/login'),
+        Uri.parse('http:/10.0.2.2/:3000/user/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({"email": email, "password": password}),
       );

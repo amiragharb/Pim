@@ -1,62 +1,119 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:record/record.dart';
 
 class AvatarProvider extends ChangeNotifier {
-  List<Map<String, String>> avatars = []; // ✅ Liste des avatars récupérés
+  List<Map<String, String>> avatars = [];
   bool isLoading = false;
   String? errorMessage;
 
-  final String backendUrl = "http://172.20.10.6:3000/avatar/default"; // ✅ URL de l'API Backend
+  late final IO.Socket _socket;
+  final AudioRecorder record = AudioRecorder();
+  String _transcription = '';
+  String get transcription => _transcription;
 
-  bool _isMounted = true; // ✅ Variable pour suivre si le Provider est encore actif
+  final String baseUrl = "http://10.0.2.2:3000";
+
+  bool _isMounted = true;
+
+  AvatarProvider() {
+    _initSocket();
+    _initMicrophone();
+  }
 
   @override
   void dispose() {
-    _isMounted = false; // ✅ Marquer l'objet comme détruit avant `dispose()`
+    _isMounted = false;
+    _socket.dispose();
+    record.dispose();
     super.dispose();
   }
 
-  Future<void> fetchAvatars() async {
-  isLoading = true;
-  errorMessage = null;
-  notifyListeners();
+  void _initSocket() {
+    _socket = IO.io(baseUrl, IO.OptionBuilder()
+        .setTransports(['websocket'])
+        .build());
 
-  try {
-    print("🔹 Envoi de la requête à $backendUrl");
-    final response = await http.get(
-      Uri.parse(backendUrl),
-      headers: {"Accept": "application/json"},
+    _socket.onConnect((_) {
+      print("🧠 WebSocket connecté !");
+    });
+
+    _socket.on('transcription', (data) {
+      print("📄 Transcription reçue : $data");
+      _transcription = data.toString();
+      notifyListeners();
+    });
+
+    _socket.onDisconnect((_) {
+      print("🔌 WebSocket déconnecté");
+    });
+  }
+
+  void _initMicrophone() async
+   {
+    bool micPermission = await record.hasPermission();
+    if (!micPermission) {
+      print("❌ Micro non autorisé !");
+      return;
+    }
+
+    final stream = await record.startStream(
+      const RecordConfig(encoder: AudioEncoder.pcm16bits, sampleRate: 16000),
     );
 
-    print("🔹 Réponse du serveur : ${response.statusCode}");
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      print("✅ Données reçues : $data");
-
-      // ✅ Vérifie que toutes les valeurs sont bien des String
-      avatars = List<Map<String, String>>.from(
-        (data["avatars"] as List).map((avatar) => {
-          "id": avatar["id"].toString(), // ✅ Convertir en String
-          "name": avatar["name"].toString(), // ✅ Convertir en String
-          "image": avatar["image"]?.toString() ?? "", // ✅ Gérer les valeurs nulles
-          "model": avatar["model"]?.toString() ?? "", // ✅ Gérer les valeurs nulles
-        })
-      );
-
-      print("✅ Avatars formatés : $avatars");
-    } else {
-      errorMessage = "Erreur : ${response.body}";
-      print("❌ Erreur API : $errorMessage");
-    }
-  } catch (error) {
-    errorMessage = "Impossible de contacter le serveur.";
-    print("❌ Erreur de connexion : $error");
-  } finally {
-    isLoading = false;
-    notifyListeners();
+    stream.listen((Uint8List chunk) 
+    {
+      // Chaque chunk est envoyé vers le backend (NestJS → Deepgram)
+      if (_socket.connected) {
+        print("🎤 Envoi audio : ${chunk.length} bytes");
+        _socket.emit('audio', chunk);
+      }
+    }, onDone: () {
+      print("🎤 Capture terminée");
+    }, onError: (e) {
+      print("❌ Erreur micro : $e");
+    });
   }
-}
+  Future<void> restartMicrophone() async 
+  {
+  await record.stop(); // Stoppe l’ancien stream
+  await Future.delayed(Duration(milliseconds: 300));
+  _initMicrophone(); // Redémarre proprement
+  }
 
+
+  Future<void> fetchAvatars() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    final url = "$baseUrl/avatar/default";
+
+    try {
+      final response = await http.get(Uri.parse(url), headers: {"Accept": "application/json"});
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        avatars = List<Map<String, String>>.from(
+          (data["avatars"] as List).map((avatar) => {
+                "id": avatar["id"].toString(),
+                "name": avatar["name"].toString(),
+                "image": avatar["image"]?.toString() ?? "",
+                "model": avatar["model"]?.toString() ?? "",
+              }),
+        );
+      } else {
+        errorMessage = "Erreur : ${response.body}";
+      }
+    } catch (error) {
+      errorMessage = "Impossible de contacter le serveur.";
+      print("❌ Erreur de connexion : $error");
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }

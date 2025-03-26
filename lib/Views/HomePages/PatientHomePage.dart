@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tesst1/Views/AssitantVocal/SpeechInteractionPage.dart';
 import 'package:tesst1/Views/Chat/ChatListScreen.dart';
 import 'package:tesst1/Views/HomePages/CustomBottomNavBar.dart';
 import 'package:tesst1/Views/HomePages/avatarDefaultscreen.dart';
+import 'package:tesst1/Views/avatar/TranscriptionScreen.dart';
 
 class HomePagePatient extends StatefulWidget {
   const HomePagePatient({super.key});
@@ -30,14 +30,14 @@ class _HomePagePatientState extends State<HomePagePatient> {
   void _startVoiceAssistance() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SpeechInteractionPage()),
+      MaterialPageRoute(builder: (context) => SpeechView()), // ✅ Ou SpeechInteractionPage
     );
   }
 
   void _openChat() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ChatListScreen()), // ✅ Rediriger vers la liste des conversations
+      MaterialPageRoute(builder: (context) => const ChatListScreen()),
     );
   }
 
@@ -55,7 +55,7 @@ class _HomePagePatientState extends State<HomePagePatient> {
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
-            icon: const Icon(Icons.message, color: Colors.white, size: 28), // ✅ Icône de messagerie
+            icon: const Icon(Icons.message, color: Colors.white, size: 28),
             onPressed: _openChat,
           ),
         ],
@@ -93,18 +93,28 @@ class _HomePagePatientState extends State<HomePagePatient> {
                     child: GestureDetector(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => AvatarDefaultScreen()),
+                        MaterialPageRoute(builder: (context) => AvatarDefaultScreen()),
                       ),
                       child: const CircleAvatar(
                         radius: 80,
-                        backgroundImage:
-                            AssetImage('assets/splash_image.png'),
+                        backgroundImage: AssetImage('assets/splash_image.png'),
                         backgroundColor: Colors.white,
                       ),
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton.icon(
+              onPressed: _startVoiceAssistance,
+              icon: const Icon(Icons.mic),
+              label: const Text('Lancer la transcription'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9D50BB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
